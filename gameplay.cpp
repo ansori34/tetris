@@ -83,11 +83,10 @@ int maps[30][15] = {
   { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
   { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
   { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2 },
+  { 2, 0, 0, 0, 0, 0, 0, 3, 0, 0, 3, 0, 0, 0, 2 },
+  { 2, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2 },
+  { 2, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2 },
+  { 2, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2 },
   { 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 }
 };
 
@@ -98,6 +97,7 @@ void control();
 bool checkSide(char);
 void checkScore();
 void clearRow(int);
+void fall(int);
 void rotate(int (&shape)[4][4]);
 
 int tempMap[30][15], iObject = 0, typeObject = random(0, 6), score = 0;
@@ -137,6 +137,7 @@ void updateMap()
   }
 
   checkScore();
+  // fall();
 
   int iShape = 0, jShape = 0, x = object[iObject].pos.x, y = object[iObject].pos.y;
   int shapeWidth = 4;
@@ -169,7 +170,7 @@ void updateMap()
         case 3: cout << "[]"; break;
       }
 
-      // cout << tempMap[i][j];
+      // cout c<< tempMap[i][j];
     }
 
     if (i >= y && i < y + 4) {
@@ -245,7 +246,7 @@ bool checkSide(char type)
 
 void checkScore()
 {
-  for (int i = 29; i >= 0; i--) {
+  for (int i = 29; i >= 0;) {
     int count = 0;
 
     for (int j = 0; j < 15; j++) {
@@ -256,7 +257,10 @@ void checkScore()
 
     if (count == 13) {
       clearRow(i);
+      fall(i);
       ++score;
+    } else {
+      --i;
     }
   }
 }
@@ -267,6 +271,18 @@ void clearRow(int index)
   for (int i = 0; i < 15; i++) {
     if (maps[index][i] == 3) {
       maps[index][i] = 0;
+    }
+  }
+}
+
+void fall(int index)
+{
+  for (int i = index; i >= 0; i--) {
+    for (int j = 0; j < 15; j++) {
+      if (maps[i - 1][j] == 3) {
+        maps[i][j] = 3;
+        maps[i - 1][j] = 0;
+      }
     }
   }
 }
