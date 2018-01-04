@@ -1,5 +1,5 @@
 #include <iostream>
-#include <unistd.h>
+#include <fstream>
 
 #include "linux.h"
 
@@ -11,7 +11,7 @@ struct Position {
 };
 
 struct Object {
-  Position pos = { 7, 0 };
+  Position pos = { 7, 1 };
   int shape[7][4][4] = {
     {
       { 0, 0, 0, 0 },
@@ -58,7 +58,11 @@ struct Object {
   };
 } object[1000];
 
-int maps[30][15] = {
+int maps[34][15] = {
+  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
   { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
   { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
   { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
@@ -83,12 +87,16 @@ int maps[30][15] = {
   { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
   { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
   { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 3, 0, 0, 3, 0, 0, 0, 2 },
-  { 2, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2 },
-  { 2, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2 },
-  { 2, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2 },
+  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
+  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
+  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
+  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
+  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
   { 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 }
 };
+
+int mapWidth = sizeof(maps[0]) / sizeof(maps[0][0]);
+int mapHeight = sizeof(maps) / sizeof(maps[0]);
 
 int random(int, int);
 void updateMap();
@@ -99,58 +107,89 @@ void checkScore();
 void clearRow(int);
 void fall(int);
 void rotate(int (&shape)[4][4]);
+bool isOver();
 
-int tempMap[30][15], iObject = 0, typeObject = random(0, 6), score = 0;
+int tempMap[34][15], iObject = 0, typeObject = random(0, 6), score = 0;
 bool spawn = false;
 
 int main()
 {
-  for (int i = 0; i < 30; i++) {
-    for (int j = 0; j < 15; j++) {
+  // string line;
+  // ifstream myfile ("data.dat");
+  // if (myfile.is_open())
+  // {
+  //   while ( getline (myfile, line) )
+  //   {
+  //     cout << line << '\n';
+  //   }
+  //   myfile.close();
+  // }
+
+  for (int i = 0; i < mapHeight; i++) {
+    for (int j = 0; j < mapWidth; j++) {
       tempMap[i][j] = maps[i][j];
     }
   }
 
-  while (1) {
+  while (true) {
     system("clear");
 
     updateMap();
-    cout << endl << "Score = " << score;
+
+    cout << endl << " ( " << object[iObject].pos.x
+      << " , " << object[iObject].pos.y << " )" << endl << endl;
+
+    for (int i = 0; i < 4; i++) {
+      for (int j = 0; j < 4; j++) {
+        cout << object[iObject].shape[typeObject][i][j] << " ";
+      }
+      cout << endl;
+    }
+
+    if (isOver()) break;
     control();
   }
+
+  cout << endl << "Game Over";
 }
 
 int random(int min, int max)
 {
-    return min + (rand() % ( max - min + 1 ));
+  srand(time(NULL));
+  return min + (rand() % ( max - min + 1 ));
 }
 
 void updateMap()
 {
   if (!checkSide('s')) {
-    object[iObject].pos.y++;
+    ++object[iObject].pos.y;
   } else {
-    // spawn = false;
     capture();
     typeObject = random(0, 6);
     ++iObject;
   }
 
   checkScore();
-  // fall();
 
   int iShape = 0, jShape = 0, x = object[iObject].pos.x, y = object[iObject].pos.y;
-  int shapeWidth = 4;
+  int shapeWidth = 4, tempI = 0;
 
-  for (int i = 0; i < 30; i++) {
+  switch (y) {
+    case 0: iShape = 3; break;
+    case 1: iShape = 2; break;
+    case 2: iShape = 1; break;
+  }
+
+  for (int i = 4; i < mapHeight; i++) {
     jShape = 0;
 
     if (x < 0) {
       jShape = -x;
     }
 
-    for (int j = 0; j < 15; j++) {
-      if (j >= x && j < x + shapeWidth && i >= y && i < y + shapeWidth) {
+    for (int j = 0; j < mapWidth; j++) {
+      if (j >= x && j < x + shapeWidth && i > y && i <= y + shapeWidth) {
+      // if (j >= x && j < x + shapeWidth && iShape <= 3) {
 
         if (object[iObject].shape[typeObject][iShape][jShape] == 1) {
           tempMap[i][j] = 1;
@@ -170,10 +209,10 @@ void updateMap()
         case 3: cout << "[]"; break;
       }
 
-      // cout c<< tempMap[i][j];
+      // cout << tempMap[i][j];
     }
 
-    if (i >= y && i < y + 4) {
+    if (i > y && i <= y + shapeWidth) {
       ++iShape;
     }
 
@@ -184,8 +223,8 @@ void updateMap()
 // to Save Condition
 void capture()
 {
-  for (int i = 0; i < 30; i++) {
-    for (int j = 0; j < 15; j++) {
+  for (int i = 0; i < mapHeight; i++) {
+    for (int j = 0; j < mapWidth; j++) {
       if (tempMap[i][j] == 1) {
         maps[i][j] = 3;
       }
@@ -227,8 +266,8 @@ bool checkSide(char type)
   int num;
   bool collide = false;
 
-  for (int i = 0; i < 30; i++) {
-     for (int j = 0; j < 15; j++) {
+  for (int i = 0; i < mapHeight; i++) {
+     for (int j = 0; j < mapWidth; j++) {
        switch (type) {
          case 's': num = tempMap[i + 1][j]; break;
          case 'a': num = tempMap[i][j - 1]; break;
@@ -246,10 +285,10 @@ bool checkSide(char type)
 
 void checkScore()
 {
-  for (int i = 29; i >= 0;) {
+  for (int i = mapHeight - 1; i >= 0;) {
     int count = 0;
 
-    for (int j = 0; j < 15; j++) {
+    for (int j = 0; j < mapWidth; j++) {
       if (maps[i][j] == 3) {
         ++count;
       }
@@ -268,7 +307,7 @@ void checkScore()
 // to Clean One Row
 void clearRow(int index)
 {
-  for (int i = 0; i < 15; i++) {
+  for (int i = 0; i < mapWidth; i++) {
     if (maps[index][i] == 3) {
       maps[index][i] = 0;
     }
@@ -278,7 +317,7 @@ void clearRow(int index)
 void fall(int index)
 {
   for (int i = index; i >= 0; i--) {
-    for (int j = 0; j < 15; j++) {
+    for (int j = 0; j < mapWidth; j++) {
       if (maps[i - 1][j] == 3) {
         maps[i][j] = 3;
         maps[i - 1][j] = 0;
@@ -290,8 +329,10 @@ void fall(int index)
 // to Rotate Object
 void rotate(int (&shape)[4][4])
 {
-  if (object[iObject].pos.x < 0) {
+  if (object[iObject].pos.x <= 0) {
     object[iObject].pos.x = 1;
+  } else if (object[iObject].pos.x >= 11) {
+    object[iObject].pos.x = 10;
   }
 
   int temp[4][4];
@@ -311,4 +352,15 @@ void rotate(int (&shape)[4][4])
       shape[i][j] = temp[i][j];
     }
   }
+}
+
+bool isOver()
+{
+  for (int i = 0; i < mapWidth; i++) {
+    if (maps[4][i] == 3) {
+      return true;
+    }
+  }
+
+  return false;
 }
