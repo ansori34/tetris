@@ -7,7 +7,7 @@ and use the getch() and getche() functions.
 #include <termios.h>
 #include <unistd.h>
 #include <stdio.h>
- 
+
 /* reads from keypress, doesn't echo */
 int getch(void) {
     struct termios oldattr, newattr;
@@ -20,7 +20,7 @@ int getch(void) {
     tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
     return ch;
 }
- 
+
 /* reads from keypress, and echoes */
 int getche(void) {
     struct termios oldattr, newattr;

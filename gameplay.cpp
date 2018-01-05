@@ -1,7 +1,8 @@
 #include <iostream>
 #include <fstream>
-
 #include "linux.h"
+#define WIDTH 15
+#define HEIGHT 34
 
 using namespace std;
 
@@ -58,47 +59,8 @@ struct Object {
   };
 } object[1000];
 
-int maps[34][15] = {
-  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2 },
-  { 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 }
-};
-
-int mapWidth = sizeof(maps[0]) / sizeof(maps[0][0]);
-int mapHeight = sizeof(maps) / sizeof(maps[0]);
-
 int random(int, int);
+void generateMap();
 void updateMap();
 void capture();
 void control();
@@ -107,37 +69,87 @@ void checkScore();
 void clearRow(int);
 void fall(int);
 void rotate(int (&shape)[4][4]);
+void saveScore(string);
 bool isOver();
 
-int tempMap[34][15], iObject = 0, typeObject = random(0, 6), score = 0;
+void play();
+void high();
+
+int maps[34][15], tempMap[34][15];
+int iObject = 0, typeObject = random(0, 6), score = 0;
+int posX = object[iObject].pos.x, posY = object[iObject].pos.y;
 bool spawn = false;
+string playerName;
 
 int main()
 {
-  // string line;
-  // ifstream myfile ("data.dat");
-  // if (myfile.is_open())
-  // {
-  //   while ( getline (myfile, line) )
-  //   {
-  //     cout << line << '\n';
-  //   }
-  //   myfile.close();
-  // }
+  system("clear");
 
-  for (int i = 0; i < mapHeight; i++) {
-    for (int j = 0; j < mapWidth; j++) {
-      tempMap[i][j] = maps[i][j];
+  string logo[] = {
+    " __________________________________________________________________ ",
+    "|  __________   ________   __________   _______    __   ________   |",
+    "| |___    ___| |   _____| |___    ___| |   __  |  |  | |   _____|  |",
+    "|     |  |     |  |_____      |  |     |  |__| |  |  | |  |_____   |",
+    "|     |  |     |   _____|     |  |     |     __|  |  | |_____   |  |",
+    "|     |  |     |  |           |  |     |  |  \\    |  |       |  |  |",
+    "|     |  |     |  |_____      |  |     |  |\\  \\   |  |  _____|  |  |",
+    "|     |__|     |________|     |__|     |__| \\__\\  |__| |________|  |",
+    "|__________________________________________________________________|"
+  };
+
+  for (int i = 0; i < 9; i++) {
+    for (int j = 0; j < 69; j++) {
+      cout << logo[i][j];
+    }
+
+    cout << endl;
+  }
+
+  cout << endl << "Menu Utama : " << endl;
+  cout << "1. Mainkan" << endl;
+  cout << "2. High Score" << endl;
+
+  while (true) {
+    int pilih;
+
+    cout << endl << "Pilihan = ";
+    cin >> pilih;
+
+    if (cin.fail()) {
+      cin.clear();
+      cin.ignore();
+      cout << "Input Salah !" << endl;
+      continue;
+    }
+
+    if (pilih == 1) {
+      cout << endl << "Nama Anda = ";
+      cin.ignore();
+      getline(cin, playerName);
+      play();
+      break;
+    } else if (pilih == 2) {
+      high();
+      break;
+    } else {
+      cout << "Input Salah !" << endl;
     }
   }
+}
+
+void play()
+{
+  char choice;
+  system("clear");
+
+  generateMap();
 
   while (true) {
     system("clear");
 
     updateMap();
-
-    cout << endl << " ( " << object[iObject].pos.x
-      << " , " << object[iObject].pos.y << " )" << endl << endl;
+    cout << endl << "Score : " << score;
+    cout << endl << endl;
 
     for (int i = 0; i < 4; i++) {
       for (int j = 0; j < 4; j++) {
@@ -150,7 +162,41 @@ int main()
     control();
   }
 
-  cout << endl << "Game Over";
+  cout << endl << "Game Over !";
+  saveScore(playerName);
+
+  cout << endl << "Apakah ingin main lagi (y/n) ? ";
+  cin >> choice;
+
+  if (!cin.fail() && choice == 'y') {
+    play();
+  } else {
+    main();
+  }
+}
+
+void high()
+{
+  system("clear");
+  string line;
+  ifstream myfile ("score.dat");
+
+  cout << "High Score : " << endl << endl;
+
+  if (myfile.is_open())
+  {
+    while (getline (myfile, line))
+    {
+      cout << line << endl;
+    }
+
+    myfile.close();
+  }
+
+  cin.ignore();
+  cout << endl << "Tekan sembarang tombol untuk kembali...";
+  getch();
+  main();
 }
 
 int random(int min, int max)
@@ -159,37 +205,59 @@ int random(int min, int max)
   return min + (rand() % ( max - min + 1 ));
 }
 
+void generateMap()
+{
+  for (int i = 0; i < HEIGHT; i++) {
+    for (int j = 0; j < WIDTH; j++) {
+
+      if (i == HEIGHT - 1) {
+        maps[i][j] = 2;
+        tempMap[i][j] = 2;
+      } else {
+        if (j > 0 && j < WIDTH - 1) {
+          maps[i][j] = 0;
+          tempMap[i][j] = 0;
+        } else {
+          maps[i][j] = 2;
+          tempMap[i][j] = 2;
+        }
+      }
+
+    }
+  }
+}
+
 void updateMap()
 {
   if (!checkSide('s')) {
-    ++object[iObject].pos.y;
+    ++posY;
   } else {
     capture();
     typeObject = random(0, 6);
     ++iObject;
+    posX = object[iObject].pos.x;
+    posY = object[iObject].pos.y;
   }
 
   checkScore();
 
-  int iShape = 0, jShape = 0, x = object[iObject].pos.x, y = object[iObject].pos.y;
-  int shapeWidth = 4, tempI = 0;
+  int iShape = 0, jShape = 0, shapeWidth = 4;
 
-  switch (y) {
+  switch (posY) {
     case 0: iShape = 3; break;
     case 1: iShape = 2; break;
     case 2: iShape = 1; break;
   }
 
-  for (int i = 4; i < mapHeight; i++) {
+  for (int i = 4; i < HEIGHT; i++) {
     jShape = 0;
 
-    if (x < 0) {
-      jShape = -x;
+    if (posX < 0) {
+      jShape = -posX;
     }
 
-    for (int j = 0; j < mapWidth; j++) {
-      if (j >= x && j < x + shapeWidth && i > y && i <= y + shapeWidth) {
-      // if (j >= x && j < x + shapeWidth && iShape <= 3) {
+    for (int j = 0; j < WIDTH; j++) {
+      if (j >= posX && j < posX + shapeWidth && i > posY && i <= posY + shapeWidth) {
 
         if (object[iObject].shape[typeObject][iShape][jShape] == 1) {
           tempMap[i][j] = 1;
@@ -212,7 +280,7 @@ void updateMap()
       // cout << tempMap[i][j];
     }
 
-    if (i > y && i <= y + shapeWidth) {
+    if (i > posY && i <= posY + shapeWidth) {
       ++iShape;
     }
 
@@ -223,8 +291,8 @@ void updateMap()
 // to Save Condition
 void capture()
 {
-  for (int i = 0; i < mapHeight; i++) {
-    for (int j = 0; j < mapWidth; j++) {
+  for (int i = 0; i < HEIGHT; i++) {
+    for (int j = 0; j < WIDTH; j++) {
       if (tempMap[i][j] == 1) {
         maps[i][j] = 3;
       }
@@ -234,30 +302,23 @@ void capture()
 
 void control()
 {
-  int posX = object[iObject].pos.x, posY = object[iObject].pos.y;
+  switch (getch()) {
+    case 'w': // For Rotate
+      rotate(object[iObject].shape[typeObject]);
+      break;
 
-  // if (object.active) {
-    switch (getch()) {
-      case 'w': // For Rotate
-        rotate(object[iObject].shape[typeObject]);
-        break;
+    case 'a': // For Left
+      if (!checkSide('a')) {
+        --posX;
+      }
+      break;
 
-      case 's': // For Down
-        break;
-
-      case 'a': // For Left
-        if (!checkSide('a')) {
-          --object[iObject].pos.x;
-        }
-        break;
-
-      case 'd': // For Right
-        if (!checkSide('d')) {
-          ++object[iObject].pos.x;
-        }
-        break;
-    }
-  // }
+    case 'd': // For Right
+      if (!checkSide('d')) {
+        ++posX;
+      }
+      break;
+  }
 }
 
 // to Check Collision between Object
@@ -266,8 +327,8 @@ bool checkSide(char type)
   int num;
   bool collide = false;
 
-  for (int i = 0; i < mapHeight; i++) {
-     for (int j = 0; j < mapWidth; j++) {
+  for (int i = 0; i < HEIGHT; i++) {
+     for (int j = 0; j < WIDTH; j++) {
        switch (type) {
          case 's': num = tempMap[i + 1][j]; break;
          case 'a': num = tempMap[i][j - 1]; break;
@@ -285,10 +346,10 @@ bool checkSide(char type)
 
 void checkScore()
 {
-  for (int i = mapHeight - 1; i >= 0;) {
+  for (int i = HEIGHT - 1; i >= 0;) {
     int count = 0;
 
-    for (int j = 0; j < mapWidth; j++) {
+    for (int j = 0; j < WIDTH; j++) {
       if (maps[i][j] == 3) {
         ++count;
       }
@@ -307,7 +368,7 @@ void checkScore()
 // to Clean One Row
 void clearRow(int index)
 {
-  for (int i = 0; i < mapWidth; i++) {
+  for (int i = 0; i < WIDTH; i++) {
     if (maps[index][i] == 3) {
       maps[index][i] = 0;
     }
@@ -317,7 +378,7 @@ void clearRow(int index)
 void fall(int index)
 {
   for (int i = index; i >= 0; i--) {
-    for (int j = 0; j < mapWidth; j++) {
+    for (int j = 0; j < WIDTH; j++) {
       if (maps[i - 1][j] == 3) {
         maps[i][j] = 3;
         maps[i - 1][j] = 0;
@@ -329,10 +390,10 @@ void fall(int index)
 // to Rotate Object
 void rotate(int (&shape)[4][4])
 {
-  if (object[iObject].pos.x <= 0) {
-    object[iObject].pos.x = 1;
-  } else if (object[iObject].pos.x >= 11) {
-    object[iObject].pos.x = 10;
+  if (posX <= 0) {
+    posX = 1;
+  } else if (posX >= 11) {
+    posX = 10;
   }
 
   int temp[4][4];
@@ -354,9 +415,18 @@ void rotate(int (&shape)[4][4])
   }
 }
 
+void saveScore(string name)
+{
+  ofstream out;
+
+  out.open("score.dat", ios_base::app);
+  out << name << "_" << score << endl;
+  out.close();
+}
+
 bool isOver()
 {
-  for (int i = 0; i < mapWidth; i++) {
+  for (int i = 0; i < WIDTH; i++) {
     if (maps[4][i] == 3) {
       return true;
     }
