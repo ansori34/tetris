@@ -1,6 +1,9 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
+#include <string.h>
 #include "linux.h"
+
 #define WIDTH 15
 #define HEIGHT 34
 
@@ -59,6 +62,11 @@ struct Object {
   };
 } object[1000];
 
+struct Score {
+    string name;
+    int score;
+} scores[100], tempScore;
+
 int random(int, int);
 void generateMap();
 void updateMap();
@@ -69,24 +77,27 @@ void checkScore();
 void clearRow(int);
 void fall(int);
 void rotate(int (&shape)[4][4]);
-void saveScore(string);
+void saveScore();
 bool isOver();
 
 void play();
 void high();
+void sortScore(int);
 
 int maps[34][15], tempMap[34][15];
-int iObject = 0, typeObject = random(0, 6), score = 0;
+int iObject = 0, typeObject, nextType = random(0, 6), score = 0;
 int posX = object[iObject].pos.x, posY = object[iObject].pos.y;
-bool spawn = false;
-string playerName;
+string playerName, scoreLists[1000];
+
+const int SPACE = 0, BLOCK = 1, WALL = 2, PERM_BLOCK = 3;
 
 int main()
 {
-  system("clear");
+  clear();
 
   string logo[] = {
     " __________________________________________________________________ ",
+    "|                                                                  |",
     "|  __________   ________   __________   _______    __   ________   |",
     "| |___    ___| |   _____| |___    ___| |   __  |  |  | |   _____|  |",
     "|     |  |     |  |_____      |  |     |  |__| |  |  | |  |_____   |",
@@ -94,10 +105,12 @@ int main()
     "|     |  |     |  |           |  |     |  |  \\    |  |       |  |  |",
     "|     |  |     |  |_____      |  |     |  |\\  \\   |  |  _____|  |  |",
     "|     |__|     |________|     |__|     |__| \\__\\  |__| |________|  |",
+    "|                                                                  |",
+    "|                   Oleh : Ansori, Yuri, Fifi                      |",
     "|__________________________________________________________________|"
   };
 
-  for (int i = 0; i < 9; i++) {
+  for (int i = 0; i < 12; i++) {
     for (int j = 0; j < 69; j++) {
       cout << logo[i][j];
     }
@@ -140,20 +153,23 @@ int main()
 void play()
 {
   char choice;
-  system("clear");
-
+  clear();
   generateMap();
 
   while (true) {
-    system("clear");
-
+    clear();
     updateMap();
-    cout << endl << "Score : " << score;
-    cout << endl << endl;
+
+    cout << endl << "Score : " << score << endl;
+    cout << endl << "Bentuk Selanjutnya : " << endl;
 
     for (int i = 0; i < 4; i++) {
       for (int j = 0; j < 4; j++) {
-        cout << object[iObject].shape[typeObject][i][j] << " ";
+        if (object[iObject].shape[nextType][i][j] == BLOCK) {
+          cout << "[]";
+        } else {
+          cout << "  ";
+        }
       }
       cout << endl;
     }
@@ -163,9 +179,9 @@ void play()
   }
 
   cout << endl << "Game Over !";
-  saveScore(playerName);
+  saveScore();
 
-  cout << endl << "Apakah ingin main lagi (y/n) ? ";
+  cout << endl << "Apakah ingin main lagi ( y / t ) ? ";
   cin >> choice;
 
   if (!cin.fail() && choice == 'y') {
@@ -177,26 +193,83 @@ void play()
 
 void high()
 {
-  system("clear");
+  clear();
+
   string line;
+  int count = 0;
   ifstream myfile ("score.dat");
 
   cout << "High Score : " << endl << endl;
 
+  // Copy score.dat value into Struct Score
   if (myfile.is_open())
   {
     while (getline (myfile, line))
     {
-      cout << line << endl;
+      int index = 0, tempInt;
+      string tempString;
+      scores[count].name = "";
+
+      for (int i = 0; i < line.length(); i++) {
+        if (line[i] == '_') {
+          ++index;
+          continue;
+        }
+
+        if (index == 0) {
+          scores[count].name += toupper(line[i]);
+        } else {
+          tempString += line[i];
+          stringstream num(tempString);
+          num >> tempInt;
+          scores[count].score = tempInt;
+        }
+      }
+
+      ++count;
     }
 
     myfile.close();
+  }
+
+  sortScore(count);
+
+  // Show Top 10
+  for (int i = 0; i < 10; i++) {
+    if (scores[i].name != "") {
+      cout << i + 1 << ". " << scores[i].name << " " << scores[i].score << endl;
+    }
   }
 
   cin.ignore();
   cout << endl << "Tekan sembarang tombol untuk kembali...";
   getch();
   main();
+}
+
+// Sorting Score from Highest to Lowest
+void sortScore(int count)
+{
+  bool sorted = true;
+
+  do {
+    sorted = true;
+
+    for (int i = 0; i < count - 1; i++) {
+      if (scores[i].score < scores[i + 1].score) {
+        tempScore.name = scores[i].name;
+        tempScore.score = scores[i].score;
+
+        scores[i].name = scores[i + 1].name;
+        scores[i].score = scores[i + 1].score;
+        scores[i + 1].name = tempScore.name;
+        scores[i + 1].score = tempScore.score;
+
+        sorted = false;
+      }
+    }
+  } while(!sorted);
+
 }
 
 int random(int min, int max)
@@ -211,15 +284,15 @@ void generateMap()
     for (int j = 0; j < WIDTH; j++) {
 
       if (i == HEIGHT - 1) {
-        maps[i][j] = 2;
-        tempMap[i][j] = 2;
+        maps[i][j] = WALL;
+        tempMap[i][j] = WALL;
       } else {
         if (j > 0 && j < WIDTH - 1) {
-          maps[i][j] = 0;
-          tempMap[i][j] = 0;
+          maps[i][j] = SPACE;
+          tempMap[i][j] = SPACE;
         } else {
-          maps[i][j] = 2;
-          tempMap[i][j] = 2;
+          maps[i][j] = WALL;
+          tempMap[i][j] = WALL;
         }
       }
 
@@ -233,7 +306,8 @@ void updateMap()
     ++posY;
   } else {
     capture();
-    typeObject = random(0, 6);
+    typeObject = nextType;
+    nextType = random(0, 6);
     ++iObject;
     posX = object[iObject].pos.x;
     posY = object[iObject].pos.y;
@@ -259,8 +333,8 @@ void updateMap()
     for (int j = 0; j < WIDTH; j++) {
       if (j >= posX && j < posX + shapeWidth && i > posY && i <= posY + shapeWidth) {
 
-        if (object[iObject].shape[typeObject][iShape][jShape] == 1) {
-          tempMap[i][j] = 1;
+        if (object[iObject].shape[typeObject][iShape][jShape] == BLOCK) {
+          tempMap[i][j] = BLOCK;
         } else {
           tempMap[i][j] = maps[i][j];
         }
@@ -271,10 +345,10 @@ void updateMap()
       }
 
       switch (tempMap[i][j]) {
-        case 0: cout << "  "; break;
-        case 1: cout << "[]"; break;
-        case 2: cout << "**"; break;
-        case 3: cout << "[]"; break;
+        case SPACE: cout << "  "; break;
+        case BLOCK: cout << "[]"; break;
+        case WALL: cout << "**"; break;
+        case PERM_BLOCK: cout << "[]"; break;
       }
 
       // cout << tempMap[i][j];
@@ -293,8 +367,8 @@ void capture()
 {
   for (int i = 0; i < HEIGHT; i++) {
     for (int j = 0; j < WIDTH; j++) {
-      if (tempMap[i][j] == 1) {
-        maps[i][j] = 3;
+      if (tempMap[i][j] == BLOCK) {
+        maps[i][j] = PERM_BLOCK;
       }
     }
   }
@@ -335,7 +409,7 @@ bool checkSide(char type)
          case 'd': num = tempMap[i][j + 1]; break;
        }
 
-       if (tempMap[i][j] == 1 && num == 2 | num == 3) {
+       if (tempMap[i][j] == BLOCK && num == WALL | num == PERM_BLOCK) {
          collide = true;
        }
      }
@@ -350,7 +424,7 @@ void checkScore()
     int count = 0;
 
     for (int j = 0; j < WIDTH; j++) {
-      if (maps[i][j] == 3) {
+      if (maps[i][j] == PERM_BLOCK) {
         ++count;
       }
     }
@@ -358,7 +432,7 @@ void checkScore()
     if (count == 13) {
       clearRow(i);
       fall(i);
-      ++score;
+      score += 25;
     } else {
       --i;
     }
@@ -369,8 +443,8 @@ void checkScore()
 void clearRow(int index)
 {
   for (int i = 0; i < WIDTH; i++) {
-    if (maps[index][i] == 3) {
-      maps[index][i] = 0;
+    if (maps[index][i] == PERM_BLOCK) {
+      maps[index][i] = SPACE;
     }
   }
 }
@@ -379,9 +453,9 @@ void fall(int index)
 {
   for (int i = index; i >= 0; i--) {
     for (int j = 0; j < WIDTH; j++) {
-      if (maps[i - 1][j] == 3) {
-        maps[i][j] = 3;
-        maps[i - 1][j] = 0;
+      if (maps[i - 1][j] == PERM_BLOCK) {
+        maps[i][j] = PERM_BLOCK;
+        maps[i - 1][j] = SPACE;
       }
     }
   }
@@ -415,19 +489,19 @@ void rotate(int (&shape)[4][4])
   }
 }
 
-void saveScore(string name)
+void saveScore()
 {
   ofstream out;
 
   out.open("score.dat", ios_base::app);
-  out << name << "_" << score << endl;
+  out << playerName << "_" << score << endl;
   out.close();
 }
 
 bool isOver()
 {
   for (int i = 0; i < WIDTH; i++) {
-    if (maps[4][i] == 3) {
+    if (maps[4][i] == PERM_BLOCK) {
       return true;
     }
   }

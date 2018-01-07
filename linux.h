@@ -33,3 +33,12 @@ int getche(void) {
     tcsetattr( STDIN_FILENO, TCSANOW, &oldattr );
     return ch;
 }
+
+// Clear screen in multi platform
+void clear() {
+  #ifdef __unix__
+  system("clear");
+  #else
+  system("cls");
+  #endif
+}
