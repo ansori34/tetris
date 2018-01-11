@@ -1,3 +1,16 @@
+/**
+  * Tetris Game
+  *
+  * Player tasked to organize the blocks in such a way and collect
+  as many scores as possible.
+  * Player will lose if the block has piled upwards
+  *
+  * Use the 'W' key to rotate the object
+  * Use the 'A' key to move the object to the left
+  * Use the 'D' key to move the object to the right
+  *
+**/
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -9,6 +22,15 @@
 
 using namespace std;
 
+/**
+  * Struct Usability
+  *
+  * Position = To Save Block Coordinates
+  * Object = To Save Block Condition
+  * Score = To Save High Scores Temporarily
+  *
+**/
+
 struct Position {
   int x;
   int y;
@@ -17,48 +39,13 @@ struct Position {
 struct Object {
   Position pos = { 7, 1 };
   int shape[7][4][4] = {
-    {
-      { 0, 0, 0, 0 },
-      { 0, 1, 1, 0 },
-      { 0, 1, 1, 0 },
-      { 0, 0, 0, 0 }
-    },
-    {
-      { 0, 0, 0, 0 },
-      { 1, 1, 1, 1 },
-      { 0, 0, 0, 0 },
-      { 0, 0, 0, 0 }
-    },
-    {
-      { 0, 0, 0, 0 },
-      { 0, 0, 1, 1 },
-      { 0, 1, 1, 0 },
-      { 0, 0, 0, 0 }
-    },
-    {
-      { 0, 0, 0, 0 },
-      { 0, 1, 1, 0 },
-      { 0, 0, 1, 1 },
-      { 0, 0, 0, 0 }
-    },
-    {
-      { 0, 0, 0, 0 },
-      { 0, 1, 1, 1 },
-      { 0, 1, 0, 0 },
-      { 0, 0, 0, 0 }
-    },
-    {
-      { 0, 0, 0, 0 },
-      { 0, 1, 1, 1 },
-      { 0, 0, 0, 1 },
-      { 0, 0, 0, 0 }
-    },
-    {
-      { 0, 0, 0, 0 },
-      { 0, 1, 1, 1 },
-      { 0, 0, 1, 0 },
-      { 0, 0, 0, 0 }
-    }
+    {{ 0, 0, 0, 0 }, { 0, 1, 1, 0 }, { 0, 1, 1, 0 }, { 0, 0, 0, 0 }},
+    {{ 0, 0, 0, 0 }, { 1, 1, 1, 1 }, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }},
+    {{ 0, 0, 0, 0 }, { 0, 0, 1, 1 }, { 0, 1, 1, 0 }, { 0, 0, 0, 0 }},
+    {{ 0, 0, 0, 0 }, { 0, 1, 1, 0 }, { 0, 0, 1, 1 }, { 0, 0, 0, 0 }},
+    {{ 0, 0, 0, 0 }, { 0, 1, 1, 1 }, { 0, 1, 0, 0 }, { 0, 0, 0, 0 }},
+    {{ 0, 0, 0, 0 }, { 0, 1, 1, 1 }, { 0, 0, 0, 1 }, { 0, 0, 0, 0 }},
+    {{ 0, 0, 0, 0 }, { 0, 1, 1, 1 }, { 0, 0, 1, 0 }, { 0, 0, 0, 0 }}
   };
 } object[1000];
 
@@ -66,6 +53,34 @@ struct Score {
     string name;
     int score;
 } scores[100], tempScore;
+
+/**
+  * Function Usability
+  *
+  * random() = To Generate Random Number
+        # int min = Set minimum number
+        # int max = Set maximum number
+  * generateMap() = To Generate Map and save into Array
+  * updateMap() = To Update Map Conditiom
+  * capture() = To Change Block to Permanent Block ( Not Rotatable and Movable )
+  * control() = To Control Block Position and Rotation
+  * checkSide() = To Check Objects around the Block
+        # char type = Change The direction type ( Left, Right, Down )
+  * checkScore() = To Add Score
+  * clearRow() = To Clear One Row Permanent Block
+        # int index = Set index of Row
+  * fall() = To Make all Permanent Block in Above index Fall Down 1 Step
+        # int index = Set index of Row
+  * rotate() = To Rotate Specific Block
+        # int (&shape)[4][4] = Set address of Specific Block Type
+  * saveScore() = To Save Score Into score.dat File
+  * isOver() = To Check Whether Game Ends or Not
+  * play() = To Play the Game
+  * high() = To Show List of High Score
+  * sortScore() = To Sorting Score from Highest to Lowest
+        # int count = Set Count of List
+  *
+**/
 
 int random(int, int);
 void generateMap();
@@ -87,7 +102,7 @@ void sortScore(int);
 int maps[34][15], tempMap[34][15];
 int iObject = 0, typeObject, nextType = random(0, 6), score = 0;
 int posX = object[iObject].pos.x, posY = object[iObject].pos.y;
-string playerName, scoreLists[1000];
+string playerName;
 
 const int SPACE = 0, BLOCK = 1, WALL = 2, PERM_BLOCK = 3;
 
@@ -163,6 +178,7 @@ void play()
     cout << endl << "Score : " << score << endl;
     cout << endl << "Bentuk Selanjutnya : " << endl;
 
+    // Print Next Shape
     for (int i = 0; i < 4; i++) {
       for (int j = 0; j < 4; j++) {
         if (object[iObject].shape[nextType][i][j] == BLOCK) {
@@ -173,7 +189,7 @@ void play()
       }
       cout << endl;
     }
-
+    // If Game Over
     if (isOver()) break;
     control();
   }
@@ -302,6 +318,7 @@ void generateMap()
 
 void updateMap()
 {
+  // Check collision under object
   if (!checkSide('s')) {
     ++posY;
   } else {
@@ -362,7 +379,7 @@ void updateMap()
   }
 }
 
-// to Save Condition
+// to copy tempMap Condition into maps
 void capture()
 {
   for (int i = 0; i < HEIGHT; i++) {
@@ -429,7 +446,8 @@ void checkScore()
       }
     }
 
-    if (count == 13) {
+    // If horizontal block is full
+    if (count == WIDTH - 2) {
       clearRow(i);
       fall(i);
       score += 25;
